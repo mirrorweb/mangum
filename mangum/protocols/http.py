@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 
 from mangum.types import ASGIApp, Message, Scope
 from mangum.exceptions import UnexpectedMessage
-
+from mangum.utils import get_header
 
 class HTTPCycleState(enum.Enum):
     """
@@ -51,6 +51,7 @@ class HTTPCycle:
     text_mime_types: typing.List[str]
     state: HTTPCycleState = HTTPCycleState.REQUEST
     response: dict = field(default_factory=dict)
+    use_multi_value_headers: bool = False
 
     def __post_init__(self) -> None:
         self.logger: logging.Logger = logging.getLogger("mangum.http")
@@ -92,7 +93,7 @@ class HTTPCycle:
             elif self.state is not HTTPCycleState.COMPLETE:
                 self.response["statusCode"] = 500
                 self.response["body"] = "Internal Server Error"
-                self.response["headers"] = {"content-type": "text/plain; charset=utf-8"}
+                self.response["multiValueHeaders"] = {"content-type": ["text/plain; charset=utf-8"]}
 
     async def receive(self) -> Message:
         """
@@ -121,10 +122,7 @@ class HTTPCycle:
                 if lower_key in multi_value_headers:
                     multi_value_headers[lower_key].append(value.decode())
                 elif lower_key in headers:
-                    multi_value_headers[lower_key] = [
-                        headers.pop(lower_key),
-                        value.decode(),
-                    ]
+                    multi_value_headers[lower_key] = [headers.pop(lower_key), value.decode()]
                 else:
                     headers[lower_key] = value.decode()
 
@@ -150,16 +148,25 @@ class HTTPCycle:
                 # Check if a binary response should be returned based on the mime type
                 # or content encoding.
                 mimetype, _ = cgi.parse_header(
-                    self.response["headers"].get("content-type", "text/plain")
+                    get_header(self.response["headers"], "content-type", default="text/plain")
                 )
                 if (
                     mimetype not in self.text_mime_types
                     and not mimetype.startswith("text/")
-                ) or self.response["headers"].get("content-encoding") in ["gzip", "br"]:
+                ) or get_header(self.response["headers"], "content-encoding") in ["gzip", "br"]:
                     body = base64.b64encode(body)
                     self.response["isBase64Encoded"] = True
 
                 self.response["body"] = body.decode()
+
+                if not self.use_multi_value_headers:
+                    self.response["headers"] = {
+                        k: vv[0]
+                        for k, vv in self.response["multiValueHeaders"].items()
+                        if len(vv) > 0
+                    }
+                    del self.response["multiValueHeaders"]
+
                 self.state = HTTPCycleState.COMPLETE
                 await self.app_queue.put({"type": "http.disconnect"})
 
