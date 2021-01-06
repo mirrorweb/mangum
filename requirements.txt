@@ -1,0 +1,14 @@
+# Testing
+pytest
+codecov
+pytest-cov
+black
+starlette
+quart; python_version == '3.7'
+moto
+mypy
+brotli
+brotli-asgi
+# Docs
+mkdocs
+mkdocs-material
