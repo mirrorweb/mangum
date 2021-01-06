@@ -6,7 +6,14 @@ def get_long_description():
 setup(
     name="mangum",
     version="0.10.0",
-    packages=["mangum", "mangum.protocols"]
+    packages=[
+        "mangum",
+        "mangum.protocols",        
+        "mangum.adapter",
+        "mangum.exceptions",
+        "mangum.types",
+        "mangum.utils",
+    ]
     license="MIT",
     url="https://github.com/jordaneremieff/mangum",
     description="AWS Lambda & API Gateway support for ASGI",
