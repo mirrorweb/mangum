@@ -1,14 +1,16 @@
 from setuptools import find_packages, setup
 
-
 def get_long_description():
     return open("README.md", "r", encoding="utf8").read()
-
 
 setup(
     name="mangum",
     version="0.10.0",
     packages=find_packages(),
+    packages=find_packages(
+        "src",
+        exclude=["tests"]
+    ),
     license="MIT",
     url="https://github.com/jordaneremieff/mangum",
     description="AWS Lambda & API Gateway support for ASGI",
