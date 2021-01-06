@@ -7,7 +7,6 @@ setup(
     name="mangum",
     version="0.10.0",
     packages=[
-        "mangum",
         "mangum.protocols",        
         "mangum.adapter",
         "mangum.exceptions",
