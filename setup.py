@@ -6,9 +6,8 @@ def get_long_description():
 setup(
     name="mangum",
     version="0.10.0",
-    packages=find_packages(),
     packages=find_packages(
-        "src",
+        "mangum",
         exclude=["tests"]
     ),
     license="MIT",
